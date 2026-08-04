@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#11120f" />
+    <meta name="description" content="夜航电台：转动频率，收听六座城市入夜后的声音。" />
+    <title>夜航电台 | Nightwave FM</title>
+    <link rel="preconnect" href="https://unpkg.com" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body data-station="0">
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="夜航电台首页">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>夜航电台</span>
+      </a>
+      <div class="header-actions">
+        <span class="live-status"><span></span> LIVE</span>
+        <button class="icon-button" id="soundToggle" type="button" aria-label="开启声音" title="开启声音">
+          <i data-lucide="volume-x" aria-hidden="true"></i>
+        </button>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero" id="top" aria-labelledby="hero-title">
+        <div class="hero-image" aria-hidden="true"></div>
+        <div class="hero-shade" aria-hidden="true"></div>
+        <div class="hero-content">
+          <div class="intro">
+            <p class="eyebrow">NIGHTWAVE FM · 22:47 CST</p>
+            <h1 id="hero-title">夜航电台</h1>
+            <p class="lead">六座城市，六段未眠时刻。转动频率，让今晚的杂音替你保管心事。</p>
+            <div class="now-playing" aria-live="polite">
+              <span class="now-label">正在收听</span>
+              <strong id="stationTitle">上海 · 雨幕之后</strong>
+              <span id="stationNote">出租车划过积水，梧桐叶把雨声留在路边。</span>
+            </div>
+          </div>
+
+          <div class="tuner" aria-label="频率调谐器">
+            <div class="frequency-readout">
+              <span id="frequency">88.6</span><small>MHz</small>
+            </div>
+            <div class="signal-row">
+              <span>SIGNAL</span>
+              <div class="signal-bars" id="signalBars" aria-hidden="true">
+                <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+              </div>
+            </div>
+            <button class="dial" id="dial" type="button" aria-label="调节频率，使用左右方向键或滚轮" aria-valuemin="0" aria-valuemax="5" aria-valuenow="0">
+              <span class="dial-ring"></span>
+              <span class="dial-face"><i></i></span>
+            </button>
+            <div class="tuner-actions">
+              <button class="text-button" id="randomButton" type="button">
+                <i data-lucide="shuffle" aria-hidden="true"></i>
+                随机漫游
+              </button>
+              <button class="icon-button light" id="favoriteButton" type="button" aria-label="收藏当前频率" title="收藏当前频率">
+                <i data-lucide="heart" aria-hidden="true"></i>
+              </button>
+            </div>
+            <p class="tuner-help">拖动旋钮 · 滚轮 · 方向键</p>
+          </div>
+        </div>
+        <a class="scroll-cue" href="#frequencies">
+          探索所有频率
+          <i data-lucide="arrow-down" aria-hidden="true"></i>
+        </a>
+      </section>
+
+      <section class="frequencies" id="frequencies" aria-labelledby="frequency-heading">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow dark">THE NIGHT DIAL</p>
+            <h2 id="frequency-heading">今夜可接收的频率</h2>
+          </div>
+          <p>每一个频道都是一小段城市切片。点击即可调频，收藏会留在这台设备上。</p>
+        </div>
+        <div class="station-grid" id="stationGrid"></div>
+      </section>
+
+      <section class="sign-off" aria-label="电台留言">
+        <blockquote>“城市睡着以后，声音才开始说真话。”</blockquote>
+        <p>NO ADS · NO TRACKING · JUST THE NIGHT</p>
+        <button class="text-button inverse" id="returnButton" type="button">
+          <i data-lucide="radio" aria-hidden="true"></i>
+          回到调频台
+        </button>
+      </section>
+    </main>
+
+    <footer>
+      <span>NW/FM — BROADCASTING FROM SOMEWHERE AFTER DARK</span>
+      <span id="year"></span>
+    </footer>
+
+    <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>
