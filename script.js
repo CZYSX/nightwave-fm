@@ -1,49 +1,49 @@
 const stations = [
   {
-    frequency: "88.6",
-    city: "上海",
-    title: "雨幕之后",
-    note: "出租车划过积水，梧桐叶把雨声留在路边。",
+    frequency: "91.4",
+    city: "拉萨",
+    title: "综合广播",
+    note: "拉萨人民广播电台新闻综合频率，藏汉双语播出，覆盖拉萨八区县。",
     color: "#d8f05c",
     tone: 155,
   },
   {
-    frequency: "91.3",
-    city: "拉萨",
-    title: "风越过山口",
-    note: "经幡已经安静，只有风还在翻阅远处的雪线。",
+    frequency: "94.7",
+    city: "上海",
+    title: "经典947",
+    note: "上海广播电视台经典音乐频率，以古典、爵士与世界音乐为主。",
     color: "#8bc5b3",
     tone: 196,
   },
   {
-    frequency: "94.7",
+    frequency: "96.8",
     city: "重庆",
-    title: "末班索道",
-    note: "江面比霓虹更慢，山城的台阶通向一盏小灯。",
+    title: "重庆之声",
+    note: "重庆广播电视集团新闻综合频率，播出频率 FM96.8、AM1314。",
     color: "#ee684d",
     tone: 130,
   },
   {
-    frequency: "97.5",
+    frequency: "99.5",
     city: "阿勒泰",
-    title: "雪原短波",
-    note: "木屋的烟升到一半，银河接走了剩下的故事。",
+    title: "汉语综合广播",
+    note: "阿勒泰地区广播电视台汉语综合广播，本地调频 FM99.5。",
     color: "#a9b9e6",
     tone: 220,
   },
   {
-    frequency: "101.8",
-    city: "广州",
-    title: "凌晨糖水铺",
-    note: "卷帘门落下之前，最后一碗绿豆沙还冒着热气。",
+    frequency: "103.3",
+    city: "大连",
+    title: "新闻综合广播",
+    note: "大连广播电视台新闻综合频率，播出频率 FM103.3、AM882。",
     color: "#f0be5c",
     tone: 174,
   },
   {
-    frequency: "106.2",
-    city: "大连",
-    title: "海雾来信",
-    note: "汽笛从看不见的地方传来，码头把回声折了两次。",
+    frequency: "106.1",
+    city: "广州",
+    title: "交通广播",
+    note: "广州广播电视台交通广播，同时也是广州应急广播，FM106.1。",
     color: "#73b3c7",
     tone: 110,
   },
@@ -75,17 +75,21 @@ let soundEnabled = false;
 
 const favorites = new Set(JSON.parse(localStorage.getItem("nightwave-favorites") || "[]"));
 
+function displayName(station) {
+  return station.title.startsWith(station.city) ? station.title : `${station.city} · ${station.title}`;
+}
+
 function renderCards() {
   els.grid.innerHTML = stations
     .map(
       (station, index) => `
         <button class="station-card ${index === currentIndex ? "active" : ""} ${favorites.has(index) ? "favorite" : ""}"
-          type="button" data-index="${index}" style="--card-color: ${station.color}" aria-label="调到 ${station.frequency}，${station.city}${station.title}">
+          type="button" data-index="${index}" style="--card-color: ${station.color}" aria-label="调到 ${station.frequency}，${displayName(station)}">
           <span class="card-top">
             <span class="card-frequency">${station.frequency} MHz</span>
             <span class="card-index">0${index + 1}</span>
           </span>
-          <h3>${station.city} · ${station.title}</h3>
+          <h3>${displayName(station)}</h3>
           <p>${station.note}</p>
           <i class="card-heart" data-lucide="heart" aria-hidden="true"></i>
         </button>
@@ -103,13 +107,13 @@ function tuneTo(index) {
   currentIndex = (index + stations.length) % stations.length;
   const station = stations[currentIndex];
   els.frequency.textContent = station.frequency;
-  els.stationTitle.textContent = `${station.city} · ${station.title}`;
+  els.stationTitle.textContent = displayName(station);
   els.stationNote.textContent = station.note;
   els.body.dataset.station = String(currentIndex);
   els.body.style.setProperty("--station-accent", station.color);
   els.dialFace.style.transform = `rotate(${-125 + currentIndex * 50}deg)`;
   els.dial.setAttribute("aria-valuenow", String(currentIndex));
-  els.dial.setAttribute("aria-valuetext", `${station.frequency} MHz，${station.city}${station.title}`);
+  els.dial.setAttribute("aria-valuetext", `${station.frequency} MHz，${displayName(station)}`);
   updateFavoriteButton();
   renderCards();
   updateTone(station.tone);
@@ -187,8 +191,8 @@ function toggleSound() {
     soundEnabled = false;
     audioContext.suspend();
   }
-  els.sound.setAttribute("aria-label", soundEnabled ? "关闭声音" : "开启声音");
-  els.sound.title = soundEnabled ? "关闭声音" : "开启声音";
+  els.sound.setAttribute("aria-label", soundEnabled ? "关闭氛围音" : "开启氛围音");
+  els.sound.title = soundEnabled ? "关闭氛围音" : "开启氛围音";
   els.sound.innerHTML = `<i data-lucide="${soundEnabled ? "volume-2" : "volume-x"}" aria-hidden="true"></i>`;
   refreshIcons();
 }
