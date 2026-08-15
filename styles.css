@@ -84,11 +84,31 @@ button {
 }
 
 .live-status span {
-  animation: pulse 1.6s infinite;
-  background: var(--coral);
+  background: rgba(241, 239, 231, 0.48);
   border-radius: 50%;
   height: 6px;
   width: 6px;
+}
+
+.live-status b {
+  font: inherit;
+}
+
+.live-status[data-state="loading"] span,
+.live-status[data-state="playing"] span {
+  animation: pulse 1.6s infinite;
+}
+
+.live-status[data-state="loading"] span {
+  background: var(--station-accent);
+}
+
+.live-status[data-state="playing"] span {
+  background: var(--coral);
+}
+
+.live-status[data-state="error"] span {
+  background: var(--coral);
 }
 
 .icon-button {
@@ -203,10 +223,17 @@ h1 {
   font-weight: 400;
 }
 
-.now-playing > span:last-child {
+.now-playing > #stationNote {
   color: rgba(241, 239, 231, 0.66);
   font-size: 14px;
   line-height: 1.6;
+}
+
+.stream-state {
+  color: var(--station-accent);
+  font-size: 11px;
+  font-weight: 800;
+  margin-top: 3px;
 }
 
 .now-label {
@@ -574,6 +601,14 @@ footer {
 @keyframes meter {
   from { height: 4px; opacity: 0.3; }
   to { height: 14px; opacity: 0.9; }
+}
+
+#soundToggle[data-state="loading"] svg {
+  animation: spin 900ms linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 @media (max-width: 900px) {

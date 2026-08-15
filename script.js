@@ -5,7 +5,8 @@ const stations = [
     title: "综合广播",
     note: "拉萨人民广播电台新闻综合频率，藏汉双语播出，覆盖拉萨八区县。",
     color: "#d8f05c",
-    tone: 155,
+    stream: "https://lhttp.qtfm.cn/live/5022138/64k.mp3",
+    streamProvider: "蜻蜓 FM",
   },
   {
     frequency: "94.7",
@@ -13,7 +14,8 @@ const stations = [
     title: "经典947",
     note: "上海广播电视台经典音乐频率，以古典、爵士与世界音乐为主。",
     color: "#8bc5b3",
-    tone: 196,
+    stream: "https://lhttp.qtfm.cn/live/267/64k.mp3",
+    streamProvider: "蜻蜓 FM",
   },
   {
     frequency: "96.8",
@@ -21,15 +23,17 @@ const stations = [
     title: "重庆之声",
     note: "重庆广播电视集团新闻综合频率，播出频率 FM96.8、AM1314。",
     color: "#ee684d",
-    tone: 130,
+    stream: "https://lhttp.qtfm.cn/live/1498/64k.mp3",
+    streamProvider: "蜻蜓 FM",
   },
   {
     frequency: "99.5",
-    city: "阿勒泰",
-    title: "汉语综合广播",
-    note: "阿勒泰地区广播电视台汉语综合广播，本地调频 FM99.5。",
+    city: "伊犁",
+    title: "察布查尔广播",
+    note: "伊犁察布查尔县本地广播，公开频道页面标注播出频率为 FM99.5。",
     color: "#a9b9e6",
-    tone: 220,
+    stream: "https://lhttp.qtfm.cn/live/5022610/64k.mp3",
+    streamProvider: "蜻蜓 FM",
   },
   {
     frequency: "103.3",
@@ -37,7 +41,8 @@ const stations = [
     title: "新闻综合广播",
     note: "大连广播电视台新闻综合频率，播出频率 FM103.3、AM882。",
     color: "#f0be5c",
-    tone: 174,
+    stream: "https://lhttp.qtfm.cn/live/1089/64k.mp3",
+    streamProvider: "蜻蜓 FM",
   },
   {
     frequency: "106.1",
@@ -45,7 +50,8 @@ const stations = [
     title: "交通广播",
     note: "广州广播电视台交通广播，同时也是广州应急广播，FM106.1。",
     color: "#73b3c7",
-    tone: 110,
+    stream: "https://lhttp.qtfm.cn/live/4955/64k.mp3",
+    streamProvider: "蜻蜓 FM",
   },
 ];
 
@@ -56,9 +62,12 @@ const els = {
   favorite: document.querySelector("#favoriteButton"),
   frequency: document.querySelector("#frequency"),
   grid: document.querySelector("#stationGrid"),
+  liveStatus: document.querySelector("#liveStatus"),
   random: document.querySelector("#randomButton"),
   returnButton: document.querySelector("#returnButton"),
   sound: document.querySelector("#soundToggle"),
+  streamBadge: document.querySelector("#streamBadge"),
+  streamState: document.querySelector("#streamState"),
   stationNote: document.querySelector("#stationNote"),
   stationTitle: document.querySelector("#stationTitle"),
 };
@@ -67,11 +76,12 @@ let currentIndex = 0;
 let isDragging = false;
 let dragStartX = 0;
 let dragStartIndex = 0;
-let audioContext;
-let masterGain;
-let oscillator;
-let noiseSource;
-let soundEnabled = false;
+let streamIntent = false;
+let streamSequence = 0;
+let currentStreamState = "idle";
+
+const liveAudio = new Audio();
+liveAudio.preload = "none";
 
 const favorites = new Set(JSON.parse(localStorage.getItem("nightwave-favorites") || "[]"));
 
@@ -116,7 +126,9 @@ function tuneTo(index) {
   els.dial.setAttribute("aria-valuetext", `${station.frequency} MHz，${displayName(station)}`);
   updateFavoriteButton();
   renderCards();
-  updateTone(station.tone);
+  if (streamIntent) playCurrentStream();
+  else if (currentStreamState === "paused") setStreamState("paused", "直播已暂停");
+  else setStreamState("idle", "直播待机");
 }
 
 function updateFavoriteButton() {
@@ -140,62 +152,81 @@ function refreshIcons() {
   if (window.lucide) window.lucide.createIcons();
 }
 
-function createNoiseBuffer(context) {
-  const buffer = context.createBuffer(1, context.sampleRate * 2, context.sampleRate);
-  const data = buffer.getChannelData(0);
-  for (let i = 0; i < data.length; i += 1) data[i] = Math.random() * 2 - 1;
-  return buffer;
-}
+function setStreamState(state, message) {
+  const station = stations[currentIndex];
+  const labels = {
+    idle: { badge: "READY", icon: "play", action: "播放电台直播" },
+    loading: { badge: "TUNING", icon: "loader-circle", action: "停止连接直播" },
+    playing: { badge: "LIVE", icon: "pause", action: "暂停电台直播" },
+    paused: { badge: "PAUSED", icon: "play", action: "继续播放电台直播" },
+    error: { badge: "OFF AIR", icon: "refresh-cw", action: "重新连接电台直播" },
+  };
+  const config = labels[state];
+  currentStreamState = state;
 
-function startAudio() {
-  audioContext = audioContext || new (window.AudioContext || window.webkitAudioContext)();
-  if (!masterGain) {
-    masterGain = audioContext.createGain();
-    masterGain.gain.value = 0.055;
-    masterGain.connect(audioContext.destination);
-
-    const filter = audioContext.createBiquadFilter();
-    filter.type = "lowpass";
-    filter.frequency.value = 720;
-    filter.connect(masterGain);
-
-    noiseSource = audioContext.createBufferSource();
-    noiseSource.buffer = createNoiseBuffer(audioContext);
-    noiseSource.loop = true;
-    const noiseGain = audioContext.createGain();
-    noiseGain.gain.value = 0.13;
-    noiseSource.connect(noiseGain).connect(filter);
-    noiseSource.start();
-
-    oscillator = audioContext.createOscillator();
-    oscillator.type = "sine";
-    oscillator.frequency.value = stations[currentIndex].tone;
-    const oscillatorGain = audioContext.createGain();
-    oscillatorGain.gain.value = 0.2;
-    oscillator.connect(oscillatorGain).connect(filter);
-    oscillator.start();
-  }
-  audioContext.resume();
-}
-
-function updateTone(value) {
-  if (!oscillator || !audioContext) return;
-  oscillator.frequency.exponentialRampToValueAtTime(value, audioContext.currentTime + 0.35);
-}
-
-function toggleSound() {
-  if (!soundEnabled) {
-    startAudio();
-    soundEnabled = true;
-  } else {
-    soundEnabled = false;
-    audioContext.suspend();
-  }
-  els.sound.setAttribute("aria-label", soundEnabled ? "关闭氛围音" : "开启氛围音");
-  els.sound.title = soundEnabled ? "关闭氛围音" : "开启氛围音";
-  els.sound.innerHTML = `<i data-lucide="${soundEnabled ? "volume-2" : "volume-x"}" aria-hidden="true"></i>`;
+  els.liveStatus.dataset.state = state;
+  els.streamBadge.textContent = config.badge;
+  els.streamState.textContent = message;
+  els.sound.dataset.state = state;
+  els.sound.setAttribute("aria-label", `${config.action}：${displayName(station)}`);
+  els.sound.setAttribute("aria-pressed", String(state === "playing"));
+  els.sound.title = config.action;
+  els.sound.innerHTML = `<i data-lucide="${config.icon}" aria-hidden="true"></i>`;
   refreshIcons();
 }
+
+async function playCurrentStream() {
+  const sequence = ++streamSequence;
+  const station = stations[currentIndex];
+  streamIntent = true;
+  liveAudio.pause();
+  liveAudio.src = station.stream;
+  liveAudio.load();
+  setStreamState("loading", `正在连接 ${displayName(station)}`);
+
+  try {
+    await liveAudio.play();
+    if (sequence !== streamSequence || !streamIntent) return;
+    setStreamState("playing", `直播中 · ${station.streamProvider}`);
+  } catch (error) {
+    if (sequence !== streamSequence || !streamIntent) return;
+    streamIntent = false;
+    setStreamState("error", "直播暂时无法连接，请稍后重试");
+  }
+}
+
+function pauseStream() {
+  streamIntent = false;
+  streamSequence += 1;
+  liveAudio.pause();
+  setStreamState("paused", "直播已暂停");
+}
+
+function toggleStream() {
+  if (streamIntent) pauseStream();
+  else playCurrentStream();
+}
+
+liveAudio.addEventListener("playing", () => {
+  if (!streamIntent) return;
+  const station = stations[currentIndex];
+  setStreamState("playing", `直播中 · ${station.streamProvider}`);
+});
+
+liveAudio.addEventListener("waiting", () => {
+  if (streamIntent) setStreamState("loading", `正在缓冲 ${displayName(stations[currentIndex])}`);
+});
+
+liveAudio.addEventListener("stalled", () => {
+  if (streamIntent) setStreamState("loading", `正在重新连接 ${displayName(stations[currentIndex])}`);
+});
+
+liveAudio.addEventListener("error", () => {
+  if (!streamIntent) return;
+  streamIntent = false;
+  streamSequence += 1;
+  setStreamState("error", "直播暂时无法连接，请稍后重试");
+});
 
 els.grid.addEventListener("keydown", (event) => {
   if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
@@ -248,9 +279,10 @@ els.returnButton.addEventListener("click", () => {
   document.querySelector("#top").scrollIntoView({ behavior: "smooth" });
   window.setTimeout(() => els.dial.focus(), 500);
 });
-els.sound.addEventListener("click", toggleSound);
+els.sound.addEventListener("click", toggleStream);
 
 document.querySelector("#year").textContent = new Date().getFullYear();
 renderCards();
 tuneTo(0);
+setStreamState("idle", "直播待机");
 refreshIcons();
